@@ -2,6 +2,8 @@
 
 Real-time C-UAS / base security tactical dashboard with live aircraft tracking, geofencing, threat scoring, and incident alerts on an interactive map.
 
+[![Deploy with Vercel](https://vercel.com/button)](https://vercel.com/new/clone?repository-url=https://github.com/officialfshot-web/aviation-defense-dashboard&env=DATABASE_URL)
+
 Built with Next.js, TypeScript, Tailwind CSS, Prisma, and Leaflet.
 
 ## Features
