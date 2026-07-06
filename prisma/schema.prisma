@@ -1,0 +1,47 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "sqlite"
+  url      = env("DATABASE_URL")
+}
+
+model Alert {
+  id              String   @id @default(uuid())
+  externalId      String?  @unique // ID from the alert generation logic
+  type            String
+  severity        String
+  message         String
+  timestamp       DateTime @default(now())
+  acknowledged    Boolean  @default(false)
+  acknowledgedBy  String?
+  acknowledgedAt  DateTime?
+  assetId         String?
+  threatId        String?
+  geofenceId      String?
+  metadata        String?  // JSON string for extra data
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+
+  @@index([timestamp])
+  @@index([acknowledged])
+  @@index([severity])
+}
+
+model Incident {
+  id          String   @id @default(uuid())
+  title       String
+  description String?
+  severity    String
+  status      String   @default("open")
+  assetIds    String?
+  threatIds   String?
+  alertIds    String?
+  report      String?  // JSON export
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+}
