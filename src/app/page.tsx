@@ -288,20 +288,20 @@ export default function Home() {
   return (
     <div className="relative w-full h-screen bg-[var(--background)] flex flex-col font-mono overflow-hidden">
       {/* Top Header Bar */}
-      <div className="tactical-panel px-4 py-2 flex items-center justify-between text-[var(--foreground)] z-20 shrink-0">
-        <div className="flex items-center gap-4">
-          <div className="font-bold text-lg tracking-widest">COUNTER-UAS / BASE SECURITY</div>
-          <div className="text-[10px] text-[var(--text-dim)] border-l border-[var(--border-color)] pl-4">
+      <div className="tactical-panel px-2 py-2 md:px-4 flex flex-col md:flex-row md:items-center justify-between text-[var(--foreground)] z-20 shrink-0 gap-2 md:gap-0">
+        <div className="flex items-center justify-between md:justify-start gap-2 md:gap-4">
+          <div className="font-bold text-sm md:text-lg tracking-widest truncate">COUNTER-UAS / BASE SECURITY</div>
+          <div className="hidden md:block text-[10px] text-[var(--text-dim)] border-l border-[var(--border-color)] pl-4 truncate max-w-[200px]">
             {baseLocation.name}
           </div>
           <button
             onClick={() => setShowBaseConfig(true)}
-            className="text-[10px] border border-[var(--border-color)] px-2 py-0.5 tactical-button"
+            className="text-[10px] border border-[var(--border-color)] px-2 py-1 md:py-0.5 tactical-button min-h-[32px] md:min-h-0"
           >
             SET BASE
           </button>
         </div>
-        <div className="flex items-center gap-4 text-xs">
+        <div className="flex items-center justify-between md:justify-end gap-2 md:gap-4 text-xs">
           <div className="flex items-center gap-2">
             <span className="text-[var(--text-dim)]">FEED:</span>
             <span className={isLive ? 'text-[var(--safe-green)]' : 'text-[var(--alert-yellow)]'}>
@@ -311,7 +311,7 @@ export default function Home() {
               <span className="text-[10px] text-[var(--alert-yellow)] animate-pulse">LOADING AIRCRAFT...</span>
             )}
           </div>
-          <div className="text-[var(--text-dim)]">UPDATED: {lastUpdate}</div>
+          <div className="hidden md:block text-[var(--text-dim)]">UPDATED: {lastUpdate}</div>
           <div className="flex items-center gap-2">
             <span className="text-[10px] text-[var(--text-dim)]">DATA AGE:</span>
             <span className={`text-[10px] ${
@@ -376,7 +376,7 @@ export default function Home() {
         />
 
         {/* Control Panel */}
-        <div className="absolute bottom-4 left-4 tactical-panel p-3 text-[var(--foreground)] space-y-3 rounded-sm z-40 w-44">
+        <div className="absolute bottom-2 left-2 md:bottom-4 md:left-4 tactical-panel p-2 md:p-3 text-[var(--foreground)] space-y-2 md:space-y-3 rounded-sm z-40 w-[10rem] md:w-44">
           <div className="text-[10px] text-[var(--text-dim)] uppercase tracking-wider border-b border-[var(--border-color)] pb-1">Feed</div>
           <button
             onClick={() => setIsLive(!isLive)}
@@ -444,7 +444,7 @@ export default function Home() {
         </div>
 
         {/* Alert Panel */}
-        <div className="absolute top-4 right-4 tactical-panel p-4 text-[var(--foreground)] text-sm w-80 max-h-[calc(100%-2rem)] overflow-y-auto tactical-scroll rounded-sm z-40">
+        <div className="absolute top-16 left-2 right-2 md:top-4 md:left-auto md:right-4 tactical-panel p-3 md:p-4 text-[var(--foreground)] text-sm md:w-80 max-h-[40vh] md:max-h-[calc(100%-2rem)] overflow-y-auto tactical-scroll rounded-sm z-40">
           <div className="font-bold mb-3 text-base tracking-wider border-b border-[var(--border-color)] pb-1 flex items-center justify-between">
             <span>ALERTS</span>
             <div className="flex items-center gap-2">
@@ -531,7 +531,7 @@ export default function Home() {
 
         {/* Selected Item Detail Panel */}
         {selectedItem && (
-          <div className="absolute bottom-4 left-1/2 -translate-x-1/2 tactical-panel p-4 text-[var(--foreground)] text-sm w-[28rem] max-h-[calc(100vh-8rem)] overflow-y-auto tactical-scroll rounded-sm z-40">
+          <div className="absolute bottom-2 left-2 right-2 md:bottom-4 md:left-1/2 md:-translate-x-1/2 tactical-panel p-3 md:p-4 text-[var(--foreground)] text-sm md:w-[28rem] max-h-[60vh] md:max-h-[calc(100vh-8rem)] overflow-y-auto tactical-scroll rounded-sm z-40">
             <div className="flex items-center justify-between border-b border-[var(--border-color)] pb-2 mb-2">
               <div className="font-bold text-base tracking-wider">
                 {'category' in selectedItem ? selectedItem.name : selectedItem.name}
@@ -543,7 +543,7 @@ export default function Home() {
                       const id = selectedItem.metadata?.icao24 || selectedItem.id;
                       setFollowAssetId(followAssetId === id ? null : id);
                     }}
-                    className={`text-[10px] border px-2 py-0.5 ${
+                    className={`text-[10px] border px-2 py-1 min-h-[32px] md:min-h-0 md:py-0.5 ${
                       followAssetId === (selectedItem.metadata?.icao24 || selectedItem.id)
                         ? 'bg-[var(--alert-yellow)] text-black border-[var(--alert-yellow)]'
                         : 'text-[var(--text-dim)] hover:text-[var(--foreground)] border-[var(--border-color)]'
@@ -554,7 +554,7 @@ export default function Home() {
                 )}
                 <button
                   onClick={() => setSelectedItem(null)}
-                  className="text-[10px] text-[var(--text-dim)] hover:text-[var(--foreground)] border border-[var(--border-color)] px-2 py-0.5"
+                  className="text-[10px] text-[var(--text-dim)] hover:text-[var(--foreground)] border border-[var(--border-color)] px-2 py-1 min-h-[32px] md:min-h-0 md:py-0.5"
                 >
                   CLOSE
                 </button>
@@ -728,11 +728,11 @@ export default function Home() {
 
       {/* Base Location Config Panel */}
       {showBaseConfig && (
-        <div className="absolute inset-0 z-50 flex items-center justify-center bg-black/60">
-          <div className="tactical-panel p-4 w-80 text-[var(--foreground)]">
+        <div className="absolute inset-0 z-50 flex items-center justify-center bg-black/60 p-2 md:p-0">
+          <div className="tactical-panel p-4 w-full md:w-80 max-w-[28rem] text-[var(--foreground)]">
             <div className="font-bold text-sm tracking-wider border-b border-[var(--border-color)] pb-2 mb-3 flex items-center justify-between">
               <span>SET OPERATING BASE</span>
-              <button onClick={() => setShowBaseConfig(false)} className="text-[10px] text-[var(--text-dim)] hover:text-[var(--foreground)] border border-[var(--border-color)] px-2 py-0.5">CLOSE</button>
+              <button onClick={() => setShowBaseConfig(false)} className="text-[10px] text-[var(--text-dim)] hover:text-[var(--foreground)] border border-[var(--border-color)] px-2 py-1 min-h-[32px]">CLOSE</button>
             </div>
 
             <div className="text-[10px] text-[var(--text-dim)] uppercase tracking-wider mb-1">Presets</div>
@@ -752,7 +752,7 @@ export default function Home() {
                     setBaseConfigForm(preset);
                     setShowBaseConfig(false);
                   }}
-                  className={`text-[10px] border p-1 text-left ${baseLocation.name === preset.name ? 'bg-[var(--military-green)] text-black border-[var(--military-green)]' : 'tactical-button'}`}
+                  className={`text-[10px] border p-1 py-2 md:py-1 text-left min-h-[44px] ${baseLocation.name === preset.name ? 'bg-[var(--military-green)] text-black border-[var(--military-green)]' : 'tactical-button'}`}
                 >
                   {preset.name}
                 </button>
@@ -767,7 +767,7 @@ export default function Home() {
                   step="0.0001"
                   value={baseConfigForm.lat}
                   onChange={(e) => setBaseConfigForm(prev => ({ ...prev, lat: parseFloat(e.target.value) || 0 }))}
-                  className="bg-black/40 border border-[var(--border-color)] text-[10px] px-2 py-1 text-[var(--foreground)]"
+                  className="bg-black/40 border border-[var(--border-color)] text-[10px] px-2 py-1 min-h-[40px] text-[var(--foreground)]"
                   placeholder="Lat"
                 />
                 <input
@@ -775,7 +775,7 @@ export default function Home() {
                   step="0.0001"
                   value={baseConfigForm.lng}
                   onChange={(e) => setBaseConfigForm(prev => ({ ...prev, lng: parseFloat(e.target.value) || 0 }))}
-                  className="bg-black/40 border border-[var(--border-color)] text-[10px] px-2 py-1 text-[var(--foreground)]"
+                  className="bg-black/40 border border-[var(--border-color)] text-[10px] px-2 py-1 min-h-[40px] text-[var(--foreground)]"
                   placeholder="Lng"
                 />
               </div>
@@ -783,7 +783,7 @@ export default function Home() {
                 type="text"
                 value={baseConfigForm.name}
                 onChange={(e) => setBaseConfigForm(prev => ({ ...prev, name: e.target.value }))}
-                className="w-full bg-black/40 border border-[var(--border-color)] text-[10px] px-2 py-1 text-[var(--foreground)]"
+                className="w-full bg-black/40 border border-[var(--border-color)] text-[10px] px-2 py-1 min-h-[40px] text-[var(--foreground)]"
                 placeholder="Sector name"
               />
               <div className="flex items-center gap-2">
@@ -792,7 +792,7 @@ export default function Home() {
                   type="number"
                   value={baseConfigForm.radiusKm}
                   onChange={(e) => setBaseConfigForm(prev => ({ ...prev, radiusKm: Math.max(10, Math.min(500, parseInt(e.target.value) || 75)) }))}
-                  className="flex-1 bg-black/40 border border-[var(--border-color)] text-[10px] px-2 py-1 text-[var(--foreground)]"
+                  className="flex-1 bg-black/40 border border-[var(--border-color)] text-[10px] px-2 py-1 min-h-[40px] text-[var(--foreground)]"
                 />
               </div>
             </div>
@@ -813,7 +813,7 @@ export default function Home() {
                   });
                 }
               }}
-              className="tactical-button px-3 py-2 text-xs block w-full text-left mb-2"
+              className="tactical-button px-3 py-2 text-xs block w-full text-left mb-2 min-h-[44px]"
             >
               USE MY LOCATION
             </button>
@@ -822,7 +822,7 @@ export default function Home() {
                 setBaseLocation(baseConfigForm);
                 setShowBaseConfig(false);
               }}
-              className="tactical-button px-3 py-2 text-xs block w-full text-left"
+              className="tactical-button px-3 py-2 text-xs block w-full text-left min-h-[44px]"
             >
               APPLY
             </button>
