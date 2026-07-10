@@ -61,6 +61,7 @@ export default function Home() {
     radiusKm: 75,
   });
   const [showBaseConfig, setShowBaseConfig] = useState(false);
+  const [showMobileAlerts, setShowMobileAlerts] = useState(false);
   const [baseConfigForm, setBaseConfigForm] = useState<typeof baseLocation>(baseLocation);
   const [isLoadingAircraft, setIsLoadingAircraft] = useState(false);
   const [aircraftImageMap, setAircraftImageMap] = useState<Record<string, string | null>>({});
@@ -375,8 +376,8 @@ export default function Home() {
           }}
         />
 
-        {/* Control Panel */}
-        <div className="absolute bottom-2 left-2 md:bottom-4 md:left-4 tactical-panel p-2 md:p-3 text-[var(--foreground)] space-y-2 md:space-y-3 rounded-sm z-40 w-[10rem] md:w-44">
+        {/* Desktop Control Panel */}
+        <div className="hidden md:block absolute bottom-4 left-4 tactical-panel p-3 text-[var(--foreground)] space-y-3 rounded-sm z-40 w-44">
           <div className="text-[10px] text-[var(--text-dim)] uppercase tracking-wider border-b border-[var(--border-color)] pb-1">Feed</div>
           <button
             onClick={() => setIsLive(!isLive)}
@@ -443,8 +444,50 @@ export default function Home() {
           </div>
         </div>
 
+        {/* Mobile Bottom Control Bar */}
+        <div className="md:hidden absolute bottom-2 left-2 right-2 tactical-panel px-2 py-2 flex items-center justify-between gap-1 z-50 rounded-sm">
+          <button
+            onClick={() => setIsLive(!isLive)}
+            className={`flex-1 px-2 py-2 text-[10px] font-bold text-center border rounded-sm ${isLive ? 'tactical-button' : 'bg-[var(--alert-yellow)] text-black border-[var(--alert-yellow)]'}`}
+          >
+            {isLive ? 'PAUSE' : 'LIVE'}
+          </button>
+          <button
+            onClick={() => setFocusPosition({ lat: baseLocation.lat, lng: baseLocation.lng })}
+            className="flex-1 tactical-button px-2 py-2 text-[10px] font-bold text-center border rounded-sm"
+          >
+            BASE
+          </button>
+          <button
+            onClick={() => {
+              const basemaps: Basemap[] = ['dark', 'satellite', 'street', 'terrain'];
+              setBasemap(basemaps[(basemaps.indexOf(basemap) + 1) % basemaps.length]);
+            }}
+            className="flex-1 tactical-button px-2 py-2 text-[10px] font-bold text-center border rounded-sm uppercase"
+          >
+            {basemap.slice(0, 3)}
+          </button>
+          <button
+            onClick={() => setAddingGeofence(!addingGeofence)}
+            className={`flex-1 px-2 py-2 text-[10px] font-bold text-center border rounded-sm ${addingGeofence ? 'bg-[var(--military-green)] text-black border-[var(--military-green)]' : 'tactical-button'}`}
+          >
+            {addingGeofence ? 'TAP' : 'ZONE'}
+          </button>
+          <button
+            onClick={() => setShowMobileAlerts(prev => !prev)}
+            className="flex-1 tactical-button px-2 py-2 text-[10px] font-bold text-center border rounded-sm relative"
+          >
+            ALERTS
+            {alerts.filter(a => !a.acknowledged).length > 0 && (
+              <span className="absolute -top-1 -right-1 bg-[var(--alert-red)] text-black text-[8px] font-bold px-1 rounded-full">
+                {alerts.filter(a => !a.acknowledged).length}
+              </span>
+            )}
+          </button>
+        </div>
+
         {/* Alert Panel */}
-        <div className="absolute top-16 left-2 right-2 md:top-4 md:left-auto md:right-4 tactical-panel p-3 md:p-4 text-[var(--foreground)] text-sm md:w-80 max-h-[40vh] md:max-h-[calc(100%-2rem)] overflow-y-auto tactical-scroll rounded-sm z-40">
+        <div className={`${showMobileAlerts ? 'block' : 'hidden'} md:block absolute bottom-16 left-2 right-2 md:bottom-auto md:top-4 md:left-auto md:right-4 tactical-panel p-3 md:p-4 text-[var(--foreground)] text-sm md:w-80 max-h-[50vh] md:max-h-[calc(100%-2rem)] overflow-y-auto tactical-scroll rounded-sm z-40`}>
           <div className="font-bold mb-3 text-base tracking-wider border-b border-[var(--border-color)] pb-1 flex items-center justify-between">
             <span>ALERTS</span>
             <div className="flex items-center gap-2">
@@ -455,9 +498,15 @@ export default function Home() {
                   const fresh = await fetchAlerts(undefined, 100);
                   setAlerts(fresh);
                 }}
-                className="text-[10px] text-[var(--text-dim)] hover:text-[var(--foreground)] border border-[var(--border-color)] px-2 py-0.5"
+                className="text-[10px] text-[var(--text-dim)] hover:text-[var(--foreground)] border border-[var(--border-color)] px-2 py-1 md:py-0.5 min-h-[32px] md:min-h-0"
               >
                 CLEAR ACK
+              </button>
+              <button
+                onClick={() => setShowMobileAlerts(false)}
+                className="md:hidden text-[10px] text-[var(--text-dim)] hover:text-[var(--foreground)] border border-[var(--border-color)] px-2 py-1 min-h-[32px]"
+              >
+                CLOSE
               </button>
             </div>
           </div>
@@ -600,50 +649,54 @@ export default function Home() {
                   }>
                     {(selectedItemInfo?.classification || selectedItem.metadata?.classification || 'UNKNOWN').toUpperCase()}
                   </span>
-                  {selectedItemInfo?.registration && (
-                    <><span className="text-[var(--text-dim)]">REGISTRATION:</span><span>{selectedItemInfo.registration}</span></>
-                  )}
-                  {selectedItemInfo?.operator && (
-                    <><span className="text-[var(--text-dim)]">OPERATOR:</span><span>{selectedItemInfo.operator}</span></>
-                  )}
-                  {selectedItem.metadata?.landingStatus && (
-                    <><span className="text-[var(--text-dim)]">STATUS:</span><span className={
-                      selectedItem.metadata.landingStatus === 'landed' ? 'text-[var(--alert-red)]'
-                      : selectedItem.metadata.landingStatus === 'landing' ? 'text-[var(--alert-yellow)]'
-                      : selectedItem.metadata.landingStatus === 'departing' ? 'text-[#ffff00]'
-                      : 'text-[var(--safe-green)]'
-                    }>{selectedItem.metadata.landingStatus.toUpperCase()}</span></>
-                  )}
-                  {selectedItem.metadata?.nearestAirport && (
-                    <><span className="text-[var(--text-dim)]">NEAREST AIRPORT:</span><span>{selectedItem.metadata.nearestAirport.icao} — {selectedItem.metadata.nearestAirport.name} ({(selectedItem.metadata.nearestAirport.distanceM / 1000).toFixed(1)} km)</span></>
-                  )}
+                  <div className="hidden md:contents">
+                    {selectedItemInfo?.registration && (
+                      <><span className="text-[var(--text-dim)]">REGISTRATION:</span><span>{selectedItemInfo.registration}</span></>
+                    )}
+                    {selectedItemInfo?.operator && (
+                      <><span className="text-[var(--text-dim)]">OPERATOR:</span><span>{selectedItemInfo.operator}</span></>
+                    )}
+                    {selectedItem.metadata?.landingStatus && (
+                      <><span className="text-[var(--text-dim)]">STATUS:</span><span className={
+                        selectedItem.metadata.landingStatus === 'landed' ? 'text-[var(--alert-red)]'
+                        : selectedItem.metadata.landingStatus === 'landing' ? 'text-[var(--alert-yellow)]'
+                        : selectedItem.metadata.landingStatus === 'departing' ? 'text-[#ffff00]'
+                        : 'text-[var(--safe-green)]'
+                      }>{selectedItem.metadata.landingStatus.toUpperCase()}</span></>
+                    )}
+                    {selectedItem.metadata?.nearestAirport && (
+                      <><span className="text-[var(--text-dim)]">NEAREST AIRPORT:</span><span>{selectedItem.metadata.nearestAirport.icao} — {selectedItem.metadata.nearestAirport.name} ({(selectedItem.metadata.nearestAirport.distanceM / 1000).toFixed(1)} km)</span></>
+                    )}
+                  </div>
                   <span className="text-[var(--text-dim)]">SPEED:</span>
                   <span>{Math.round(selectedItem.speed)} kn</span>
                   <span className="text-[var(--text-dim)]">HEADING:</span>
                   <span>{Math.round(selectedItem.heading)}°</span>
                   <span className="text-[var(--text-dim)]">ALTITUDE:</span>
                   <span>{selectedItem.position.altitude ? Math.round(selectedItem.position.altitude) : 'N/A'} m</span>
-                  {selectedItem.metadata?.icao24 && (
-                    <><span className="text-[var(--text-dim)]">ICAO24:</span><span>{selectedItem.metadata.icao24}</span></>
-                  )}
-                  {selectedItem.metadata?.callsign && (
-                    <><span className="text-[var(--text-dim)]">CALLSIGN:</span><span>{selectedItem.metadata.callsign}</span></>
-                  )}
-                  {selectedItem.metadata?.originCountry && (
-                    <><span className="text-[var(--text-dim)]">ORIGIN:</span><span>{selectedItem.metadata.originCountry}</span></>
-                  )}
-                  {selectedItem.metadata?.squawk && (
-                    <><span className="text-[var(--text-dim)]">SQUAWK:</span><span>{selectedItem.metadata.squawk}</span></>
-                  )}
-                  {selectedItem.metadata?.verticalRate !== undefined && (
-                    <><span className="text-[var(--text-dim)]">VERT RATE:</span><span>{Math.round(selectedItem.metadata.verticalRate)} m/s</span></>
-                  )}
-                  {selectedItem.metadata?.onGround !== undefined && (
-                    <><span className="text-[var(--text-dim)]">ON GROUND:</span><span>{selectedItem.metadata.onGround ? 'YES' : 'NO'}</span></>
-                  )}
-                  {selectedItem.metadata?.source && (
-                    <><span className="text-[var(--text-dim)]">SOURCE:</span><span>{selectedItem.metadata.source}</span></>
-                  )}
+                  <div className="hidden md:contents">
+                    {selectedItem.metadata?.icao24 && (
+                      <><span className="text-[var(--text-dim)]">ICAO24:</span><span>{selectedItem.metadata.icao24}</span></>
+                    )}
+                    {selectedItem.metadata?.callsign && (
+                      <><span className="text-[var(--text-dim)]">CALLSIGN:</span><span>{selectedItem.metadata.callsign}</span></>
+                    )}
+                    {selectedItem.metadata?.originCountry && (
+                      <><span className="text-[var(--text-dim)]">ORIGIN:</span><span>{selectedItem.metadata.originCountry}</span></>
+                    )}
+                    {selectedItem.metadata?.squawk && (
+                      <><span className="text-[var(--text-dim)]">SQUAWK:</span><span>{selectedItem.metadata.squawk}</span></>
+                    )}
+                    {selectedItem.metadata?.verticalRate !== undefined && (
+                      <><span className="text-[var(--text-dim)]">VERT RATE:</span><span>{Math.round(selectedItem.metadata.verticalRate)} m/s</span></>
+                    )}
+                    {selectedItem.metadata?.onGround !== undefined && (
+                      <><span className="text-[var(--text-dim)]">ON GROUND:</span><span>{selectedItem.metadata.onGround ? 'YES' : 'NO'}</span></>
+                    )}
+                    {selectedItem.metadata?.source && (
+                      <><span className="text-[var(--text-dim)]">SOURCE:</span><span>{selectedItem.metadata.source}</span></>
+                    )}
+                  </div>
                 </>
               )}
               {'estimatedImpact' in selectedItem && (
@@ -664,7 +717,7 @@ export default function Home() {
               <span>{selectedItem.position.lng.toFixed(4)}</span>
             </div>
             {'category' in selectedItem && selectedItem.metadata?.nearestAirport && (
-              <div className="mt-3 pt-3 border-t border-[var(--border-color)]">
+              <div className="hidden md:block mt-3 pt-3 border-t border-[var(--border-color)]">
                 <div className="font-bold text-xs tracking-wider mb-2 text-[var(--text-dim)]">NEAREST AIRPORT</div>
                 <div className="text-xs mb-2">
                   <span className="text-[var(--text-dim)]">AIRPORT:</span>{' '}
