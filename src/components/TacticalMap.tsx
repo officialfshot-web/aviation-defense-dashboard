@@ -8,6 +8,7 @@ import { Asset, Threat, Geofence } from '@/types/tactical';
 import { PredictedPath } from '@/lib/threatIntel';
 import { getAssetIcon, getThreatIcon } from '@/lib/militarySymbols';
 import { getMilStd2525DIcon } from '@/lib/milstd2525';
+import { getAircraftTypeName } from '@/lib/aircraftTypes';
 
 function getBasemapUrl(basemap: Basemap): string {
   switch (basemap) {
@@ -254,7 +255,7 @@ export default function TacticalMap({ assets, threats, geofences = [], predicted
       
       const marker = L.marker([asset.position.lat, asset.position.lng], {
         icon,
-      }).bindPopup(`<strong>${asset.name}</strong><br/>Type: ${asset.type}<br/>Category: ${asset.category}<br/>Classification: ${classification || 'unknown'}<br/>Status: ${asset.status}<br/>Speed: ${Math.round(asset.speed)} kn<br/>Heading: ${Math.round(asset.heading)}°${scoreText}${sidcText}${echelonText}`);
+      }).bindPopup(`<strong>${asset.name}</strong><br/>Type: ${getAircraftTypeName(asset.metadata?.aircraftType)}<br/>Category: ${asset.category}<br/>Classification: ${classification || 'unknown'}<br/>Status: ${asset.status}<br/>Speed: ${Math.round(asset.speed)} kn<br/>Heading: ${Math.round(asset.heading)}°${scoreText}${sidcText}${echelonText}`);
       if (onAssetClick) marker.on('click', () => onAssetClick(asset));
       marker.addTo(assetLayer.current!);
     });

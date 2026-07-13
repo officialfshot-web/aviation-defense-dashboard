@@ -40,6 +40,12 @@ export interface Asset {
     classification?: 'helicopter' | 'military' | 'cargo' | 'commercial' | 'general_aviation' | 'unknown';
     landingStatus?: 'landed' | 'landing' | 'departing' | 'airborne' | 'unknown';
     nearestAirport?: { icao: string; name: string; distanceM: number };
+    route?: {
+      origin: string | null;
+      destination: string | null;
+      routeString: string | null;
+      airports: string[];
+    };
     threatScore?: {
       total: number;
       level: 'low' | 'medium' | 'high' | 'critical';

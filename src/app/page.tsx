@@ -28,6 +28,8 @@ const TacticalMap = dynamic(() => import('@/components/TacticalMap'), { ssr: fal
 }>;
 import { fetchRealAircraft, aircraftToAssets, aircraftToThreats } from '@/lib/realtime';
 import { fetchAircraftInfo, AircraftInfo } from '@/lib/aircraftInfo';
+import { fetchRouteByCallsign, RouteInfo } from '@/lib/routeInfo';
+import { getAircraftTypeName } from '@/lib/aircraftTypes';
 import { SAN_ANTONIO_GEOFENCES, predictPath, generateAlerts, PredictedPath } from '@/lib/threatIntel';
 import { NEARBY_AIRPORTS } from '@/lib/airports';
 import { computeThreatScore } from '@/lib/threatScoring';
@@ -45,6 +47,8 @@ export default function Home() {
   const [selectedItemInfo, setSelectedItemInfo] = useState<AircraftInfo | null>(null);
   const [selectedItemInfoLoading, setSelectedItemInfoLoading] = useState(false);
   const [selectedItemImageError, setSelectedItemImageError] = useState(false);
+  const [selectedItemRoute, setSelectedItemRoute] = useState<RouteInfo | null>(null);
+  const [selectedItemRouteLoading, setSelectedItemRouteLoading] = useState(false);
   const [focusPosition, setFocusPosition] = useState<{ lat: number; lng: number } | null>(null);
   const [followAssetId, setFollowAssetId] = useState<string | null>(null);
   const [trackHistory, setTrackHistory] = useState<Record<string, Array<{ lat: number; lng: number; altitude?: number; timestamp: number }>>>({});
@@ -62,7 +66,10 @@ export default function Home() {
   });
   const [showBaseConfig, setShowBaseConfig] = useState(false);
   const [showMobileAlerts, setShowMobileAlerts] = useState(false);
+  const [detailExpanded, setDetailExpanded] = useState(false);
   const [baseConfigForm, setBaseConfigForm] = useState<typeof baseLocation>(baseLocation);
+  const [geoLoading, setGeoLoading] = useState(false);
+  const [geoError, setGeoError] = useState<string | null>(null);
   const [isLoadingAircraft, setIsLoadingAircraft] = useState(false);
   const [aircraftImageMap, setAircraftImageMap] = useState<Record<string, string | null>>({});
   const [classificationMap, setClassificationMap] = useState<Record<string, string | null>>({});
@@ -82,15 +89,20 @@ export default function Home() {
   useEffect(() => {
     if (showBaseConfig) {
       setBaseConfigForm(baseLocation);
+      setGeoError(null);
+      setGeoLoading(false);
     }
   }, [showBaseConfig, baseLocation]);
 
-  // Fetch aircraft photo / metadata when selected asset changes
+  // Fetch aircraft photo / metadata and route when selected asset changes
   useEffect(() => {
     setSelectedItemImageError(false);
+    setSelectedItemRoute(null);
     const icao24 = selectedItem && 'category' in selectedItem ? selectedItem.metadata?.icao24 : undefined;
+    const callsign = selectedItem && 'category' in selectedItem ? selectedItem.metadata?.callsign : undefined;
     if (!icao24) {
       setSelectedItemInfo(null);
+      setSelectedItemRoute(null);
       return;
     }
     const load = async () => {
@@ -99,7 +111,18 @@ export default function Home() {
       setSelectedItemInfo(info);
       setSelectedItemInfoLoading(false);
     };
+    const loadRoute = async () => {
+      if (!callsign) {
+        setSelectedItemRoute(null);
+        return;
+      }
+      setSelectedItemRouteLoading(true);
+      const route = await fetchRouteByCallsign(callsign);
+      setSelectedItemRoute(route);
+      setSelectedItemRouteLoading(false);
+    };
     load();
+    loadRoute();
   }, [selectedItem]);
 
   // Fetch aircraft images and classification for visible assets on the map (cached per ICAO24)
@@ -580,9 +603,28 @@ export default function Home() {
 
         {/* Selected Item Detail Panel */}
         {selectedItem && (
-          <div className="absolute bottom-2 left-2 right-2 md:bottom-4 md:left-1/2 md:-translate-x-1/2 tactical-panel p-3 md:p-4 text-[var(--foreground)] text-sm md:w-[28rem] max-h-[60vh] md:max-h-[calc(100vh-8rem)] overflow-y-auto tactical-scroll rounded-sm z-40">
+          <div
+            className={`absolute tactical-panel p-3 md:p-4 text-[var(--foreground)] text-sm md:w-[28rem] md:max-h-[calc(100vh-8rem)] overflow-y-auto tactical-scroll z-40 transition-all duration-200 ease-out ${
+              detailExpanded
+                ? 'bottom-0 left-0 right-0 rounded-t-lg max-h-[85vh] md:bottom-4 md:left-1/2 md:-translate-x-1/2 md:rounded-sm'
+                : 'bottom-0 left-0 right-0 rounded-t-lg max-h-[40vh] md:bottom-4 md:left-1/2 md:-translate-x-1/2 md:rounded-sm md:max-h-[calc(100vh-8rem)]'
+            }`}
+          >
+            {/* Mobile sheet handle */}
+            <div
+              className="md:hidden flex flex-col items-center pb-2 cursor-pointer"
+              onClick={() => setDetailExpanded(v => !v)}
+              role="button"
+              aria-label={detailExpanded ? 'Collapse details' : 'Expand details'}
+            >
+              <div className="w-10 h-1 bg-[var(--text-dim)] rounded-full mb-1.5" />
+              <div className="text-[9px] text-[var(--text-dim)] uppercase tracking-wider">
+                {detailExpanded ? 'Tap to collapse' : 'Tap to expand'}
+              </div>
+            </div>
+
             <div className="flex items-center justify-between border-b border-[var(--border-color)] pb-2 mb-2">
-              <div className="font-bold text-base tracking-wider">
+              <div className="font-bold text-base tracking-wider truncate pr-2">
                 {'category' in selectedItem ? selectedItem.name : selectedItem.name}
               </div>
               <div className="flex items-center gap-2">
@@ -630,14 +672,14 @@ export default function Home() {
                   <path d="M50 2 L90 20 L80 22 L55 14 L55 36 L65 38 L35 38 L45 36 L45 14 L20 22 L10 20 Z" />
                 </svg>
                 <div className="text-[10px] text-[var(--text-dim)] mt-2 text-center">NO PHOTO AVAILABLE</div>
-                <div className="text-[10px] text-[var(--text-dim)] text-center">{selectedItemInfo.type || 'Unknown aircraft type'}</div>
+                <div className="text-[10px] text-[var(--text-dim)] text-center">{getAircraftTypeName(selectedItemInfo.type || selectedItem.metadata?.aircraftType)}</div>
               </div>
             )}
             <div className="grid grid-cols-2 gap-2 text-xs mb-3">
               {'category' in selectedItem && (
                 <>
                   <span className="text-[var(--text-dim)]">TYPE:</span>
-                  <span>{selectedItemInfo?.type || selectedItem.type}</span>
+                  <span>{getAircraftTypeName(selectedItemInfo?.type || selectedItem.metadata?.aircraftType)}</span>
                   <span className="text-[var(--text-dim)]">CATEGORY:</span>
                   <span>{selectedItem.category}</span>
                   <span className="text-[var(--text-dim)]">CLASSIFICATION:</span>
@@ -716,6 +758,33 @@ export default function Home() {
               <span className="text-[var(--text-dim)]">LNG:</span>
               <span>{selectedItem.position.lng.toFixed(4)}</span>
             </div>
+            {'category' in selectedItem && (selectedItemRoute || selectedItemRouteLoading) && (
+              <div className="mt-3 pt-3 border-t border-[var(--border-color)]">
+                <div className="font-bold text-xs tracking-wider mb-2 text-[var(--text-dim)] flex items-center justify-between">
+                  <span>ROUTE</span>
+                  {selectedItemRouteLoading && <span className="text-[10px] animate-pulse">LOADING...</span>}
+                </div>
+                {selectedItemRoute?.route ? (
+                  <div className="flex items-center justify-between text-sm">
+                    <div className="text-center flex-1">
+                      <div className="text-[var(--alert-yellow)] font-bold text-lg">{selectedItemRoute.origin || '—'}</div>
+                      <div className="text-[10px] text-[var(--text-dim)]">ORIGIN</div>
+                    </div>
+                    <div className="text-center px-2">
+                      <div className="text-[var(--text-dim)]">→</div>
+                      <div className="text-[10px] text-[var(--text-dim)]">{selectedItemRoute.route}</div>
+                    </div>
+                    <div className="text-center flex-1">
+                      <div className="text-[var(--safe-green)] font-bold text-lg">{selectedItemRoute.destination || '—'}</div>
+                      <div className="text-[10px] text-[var(--text-dim)]">DEST</div>
+                    </div>
+                  </div>
+                ) : !selectedItemRouteLoading ? (
+                  <div className="text-xs text-[var(--text-dim)]">No route data available for this callsign.</div>
+                ) : null}
+              </div>
+            )}
+
             {'category' in selectedItem && selectedItem.metadata?.nearestAirport && (
               <div className="hidden md:block mt-3 pt-3 border-t border-[var(--border-color)]">
                 <div className="font-bold text-xs tracking-wider mb-2 text-[var(--text-dim)]">NEAREST AIRPORT</div>
@@ -852,8 +921,14 @@ export default function Home() {
 
             <button
               onClick={() => {
-                if (navigator.geolocation) {
-                  navigator.geolocation.getCurrentPosition(pos => {
+                if (!navigator.geolocation) {
+                  setGeoError('Geolocation is not supported by this browser.');
+                  return;
+                }
+                setGeoLoading(true);
+                setGeoError(null);
+                navigator.geolocation.getCurrentPosition(
+                  pos => {
                     const updated = {
                       ...baseConfigForm,
                       lat: pos.coords.latitude,
@@ -862,14 +937,36 @@ export default function Home() {
                     };
                     setBaseConfigForm(updated);
                     setBaseLocation(updated);
+                    setGeoLoading(false);
                     setShowBaseConfig(false);
-                  });
-                }
+                  },
+                  err => {
+                    setGeoLoading(false);
+                    switch (err.code) {
+                      case err.PERMISSION_DENIED:
+                        setGeoError('Location permission denied. Check browser settings and try again.');
+                        break;
+                      case err.POSITION_UNAVAILABLE:
+                        setGeoError('Position unavailable. Try again or enter coordinates manually.');
+                        break;
+                      case err.TIMEOUT:
+                        setGeoError('Location request timed out. Try again.');
+                        break;
+                      default:
+                        setGeoError('Could not retrieve location.');
+                    }
+                  },
+                  { enableHighAccuracy: true, timeout: 15000, maximumAge: 60000 }
+                );
               }}
-              className="tactical-button px-3 py-2 text-xs block w-full text-left mb-2 min-h-[44px]"
+              disabled={geoLoading}
+              className={`tactical-button px-3 py-2 text-xs block w-full text-left mb-2 min-h-[44px] ${geoLoading ? 'opacity-60 cursor-not-allowed' : ''}`}
             >
-              USE MY LOCATION
+              {geoLoading ? 'GETTING LOCATION...' : 'USE MY LOCATION'}
             </button>
+            {geoError && (
+              <div className="text-[10px] text-[var(--alert-red)] mb-2">{geoError}</div>
+            )}
             <button
               onClick={() => {
                 setBaseLocation(baseConfigForm);
